@@ -37,13 +37,11 @@ CMPLR_ROOT=${CMPLR_ROOT:-/opt/intel/oneapi/compiler/latest}
 
 SYCL_TLA_INCLUDES="-I$SYCL_TLA_ROOT/include -I$SYCL_TLA_ROOT/tools/util/include -I$SYCL_TLA_ROOT/examples/common -isystem $MKLROOT/include"
 
-SYCL_TLA_COMPILE_FLAGS="-DCUTLASS_ENABLE_SYCL -DSYCL_INTEL_TARGET -DCUTLASS_VERSIONS_GENERATED -DMKL_ILP64 -fsycl -fno-sycl-instrument-device-code -fsycl-targets=spir64_gen -Wall -Wno-unused-variable -Wno-unused-local-typedef -Wno-unused-but-set-variable -Wno-uninitialized -Wno-reorder-ctor -Wno-logical-op-parentheses -Wno-unused-function -Wno-unknown-pragmas"
-SYCL_TLA_LINK_FLAGS="-fsycl -fno-sycl-instrument-device-code -fsycl-targets=spir64_gen"
+SYCL_TLA_COMPILE_FLAGS="-DCUTLASS_ENABLE_SYCL -DSYCL_INTEL_TARGET -DCUTLASS_VERSIONS_GENERATED -DMKL_ILP64 -fsycl -fno-sycl-instrument-device-code -fsycl-targets=spir64 -Wall -Wno-unused-variable -Wno-unused-local-typedef -Wno-unused-but-set-variable -Wno-uninitialized -Wno-reorder-ctor -Wno-logical-op-parentheses -Wno-unused-function -Wno-unknown-pragmas"
+SYCL_TLA_LINK_FLAGS="-fsycl -fno-sycl-instrument-device-code -fsycl-targets=spir64"
 SYCL_TLA_LIB_DIRS="-L$MKLROOT/lib -L$TBBROOT/lib/intel64/gcc4.8"
 SYCL_TLA_LINK_LIBS="$MKLROOT/lib/libmkl_intel_thread.so $CMPLR_ROOT/lib/libiomp5.so $MKLROOT/lib/libmkl_intel_ilp64.so $MKLROOT/lib/libmkl_core.so -fsycl $MKLROOT/lib/libmkl_sycl_blas.so $MKLROOT/lib/libmkl_tbb_thread.so $SYCL_TLA_LIB_DIRS -ltbb -lsycl -lOpenCL -lm -ldl -lpthread"
 SYCL_TLA_RUNTIME_PATHS=(-Wl,-rpath,/lib64/stubs -Wl,-rpath,"$MKLROOT/lib" -Wl,-rpath,"$TBBROOT/lib/intel64/gcc4.8")
-BMG_09_LINK_FLAGS=(-Xs "-options \"-igc_opts 'VectorAliasBBThreshold=10000'\"")
-BMG_10_LINK_FLAGS=(-Xs "-options \"-igc_opts 'allowDecompose2DBlockFuncs=0'\"")
 
 echo "Building store_kv_cache SYCL extension..."
 icpx -fsycl -shared -fPIC -O2 -std=c++17 \
@@ -123,7 +121,6 @@ icpx -shared -fPIC -O3 -DNDEBUG -std=c++17 \
     $SYCL_TLA_INCLUDES \
     00_bmg_moe_gating_gemm.cpp \
     $SYCL_TLA_LINK_FLAGS \
-    -Xsycl-target-backend=spir64_gen "-device bmg-g21" \
     -Xspirv-translator \
     -spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate \
     "${SYCL_TLA_RUNTIME_PATHS[@]}" \
@@ -144,8 +141,7 @@ icpx -shared -fPIC -O3 -DNDEBUG -std=c++17 \
     $SYCL_TLA_INCLUDES \
     09_bmg_moe_quant_grouped_gemm.cpp \
     $SYCL_TLA_LINK_FLAGS \
-    -Xsycl-target-backend=spir64_gen "-device bmg-g21" \
-    "${BMG_09_LINK_FLAGS[@]}" \
+    -Xs "-options -igc_opts 'VectorAliasBBThreshold=10000'" \
     -Xspirv-translator \
     -spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate \
     "${SYCL_TLA_RUNTIME_PATHS[@]}" \
@@ -166,8 +162,7 @@ icpx -shared -fPIC -O3 -DNDEBUG -std=c++17 \
     $SYCL_TLA_INCLUDES \
     10_bmg_moe_quant_grouped_gemm.cpp \
     $SYCL_TLA_LINK_FLAGS \
-    -Xsycl-target-backend=spir64_gen "-device bmg-g21" \
-    "${BMG_10_LINK_FLAGS[@]}" \
+    -Xs "-options -igc_opts 'allowDecompose2DBlockFuncs=0'" \
     -Xspirv-translator \
     -spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate \
     "${SYCL_TLA_RUNTIME_PATHS[@]}" \
